@@ -198,14 +198,19 @@ export async function fetchMenuDataWithFallback(): Promise<MenuDataResponse> {
   const apiBase = getApiBaseUrl();
   const timestamp = Date.now();
 
-  // 1. First attempt: Dynamic API or configured backend (/api/menu)
-  const endpoints = [
-    `${apiBase}/api/menu?_t=${timestamp}`,
-    `/api/menu.json?_t=${timestamp}`,
+  // Deduplicated list of endpoints to prevent redundant calls
+  const endpointCandidates = [
+    apiBase ? `${apiBase}/api/menu?_t=${timestamp}` : '',
     `/api/menu?_t=${timestamp}`,
-  ];
+    `/api/menu.json?_t=${timestamp}`,
+  ].filter(Boolean);
+
+  const endpoints = Array.from(new Set(endpointCandidates));
 
   for (const url of endpoints) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
     try {
       const res = await fetch(url, {
         headers: {
@@ -214,7 +219,9 @@ export async function fetchMenuDataWithFallback(): Promise<MenuDataResponse> {
           Pragma: 'no-cache',
         },
         cache: 'no-store',
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('application/json')) {
@@ -260,7 +267,8 @@ export async function fetchMenuDataWithFallback(): Promise<MenuDataResponse> {
         }
       }
     } catch {
-      // Continue to next endpoint attempt
+      clearTimeout(timeoutId);
+      // Continue to next endpoint attempt without delay
     }
   }
 

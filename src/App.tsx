@@ -15,19 +15,35 @@ import { StoreInfoFooter } from './components/StoreInfoFooter.tsx';
 import { AdminPanel } from './components/admin/AdminPanel.tsx';
 import { SearchX } from 'lucide-react';
 
-import { fetchMenuDataWithFallback } from './utils/menuStorage.ts';
+import { fetchMenuDataWithFallback, getLocalMenuData } from './utils/menuStorage.ts';
+import { computeStoreStatus } from './utils/statusHelper.ts';
 import { normalizeCategoryKey } from './utils/formatters.ts';
 import { formatCategoryLabel } from './components/CategoryNav.tsx';
 
 const LOCAL_STORAGE_CART_KEY = 'faby_cart_items_v1';
 
 export default function App() {
-  // Application Data from Server
-  const [config, setConfig] = useState<StoreConfig | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [additionals, setAdditionals] = useState<Additional[]>([]);
-  const [storeStatus, setStoreStatus] = useState<StoreStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Pre-load local cached menu data synchronously so the menu renders instantaneously (0ms)
+  const initialLocal = useMemo(() => {
+    try {
+      const local = getLocalMenuData();
+      return {
+        config: local.config,
+        products: local.products,
+        additionals: local.additionals,
+        storeStatus: computeStoreStatus(local.config),
+      };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Application Data from Server (with instant local fallback)
+  const [config, setConfig] = useState<StoreConfig | null>(() => initialLocal?.config || null);
+  const [products, setProducts] = useState<Product[]>(() => initialLocal?.products || []);
+  const [additionals, setAdditionals] = useState<Additional[]>(() => initialLocal?.additionals || []);
+  const [storeStatus, setStoreStatus] = useState<StoreStatus | null>(() => initialLocal?.storeStatus || null);
+  const [isLoading, setIsLoading] = useState<boolean>(() => !initialLocal?.config);
   const [dataError, setDataError] = useState<string | null>(null);
 
   // Search & Category Filters

@@ -104,7 +104,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   src={getProductImageUrl(product.photoUrl, product.updatedAt)}
                   alt={product.name}
                   className="w-full h-full object-cover"
-                  loading="eager"
+                  loading={isFeatured ? 'eager' : 'lazy'}
+                  decoding="async"
                   onError={() => setImgError(true)}
                 />
                 <div className="absolute bottom-1.5 right-1.5 bg-stone-950/70 backdrop-blur-xs text-white p-1 sm:p-1.5 rounded-md opacity-90 hover:opacity-100 transition shadow-xs">
