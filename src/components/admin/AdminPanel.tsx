@@ -1322,7 +1322,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             >
               {[
                 { id: 'produtos', label: 'Produtos & Bebidas', icon: Utensils },
-                { id: 'experimente', label: 'Seção Experimente', icon: Sparkles },
+                { id: 'experimente', label: 'Queridinhos +Pedidos', icon: Sparkles },
                 { id: 'adicionais', label: 'Adicionais', icon: Plus },
                 { id: 'horarios', label: 'Horários & Pausas', icon: Clock },
                 { id: 'entrega', label: 'Entrega & Bairros', icon: Bike },
@@ -2266,7 +2266,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {activeTab === 'experimente' && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-black text-stone-900">Seção “Experimente”</h3>
+                    <h3 className="text-lg font-black text-stone-900">Seção “Queridinhos +Pedidos”</h3>
                     <p className="text-xs text-stone-500">
                       Escolha quais itens aparecerão em destaque no topo do cardápio e ordene-os.
                     </p>

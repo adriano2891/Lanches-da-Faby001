@@ -61,7 +61,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {isFeatured && (
         <div className="absolute top-2.5 left-2.5 z-10 bg-gradient-to-r from-fuchsia-600 to-purple-700 text-white text-[10px] sm:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
           <Sparkles className="w-3 h-3 text-amber-300" />
-          <span>Experimente</span>
+          <span>Queridinhos +Pedidos</span>
         </div>
       )}
 

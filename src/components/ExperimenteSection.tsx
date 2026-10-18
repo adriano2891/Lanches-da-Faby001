@@ -33,10 +33,10 @@ export const ExperimenteSection: React.FC<ExperimenteSectionProps> = ({
         </div>
         <div>
           <h2 id="experimente-heading" className="text-xl sm:text-2xl font-black text-purple-950 tracking-tight">
-            Experimente
+            Queridinhos +Pedidos
           </h2>
           <p className="text-xs sm:text-sm text-stone-600 font-medium">
-            Sugestões especiais selecionadas pela casa para você saborear
+            🔥 Os favoritos dos nossos clientes. Experimente o seu!
           </p>
         </div>
       </div>
