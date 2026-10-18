@@ -1,0 +1,64 @@
+[build]
+  base = ""
+  command = "npm run build"
+  publish = "dist"
+
+# Headers to prevent aggressive caching on Netlify CDN and mobile browsers
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/uploads/*"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+
+[[redirects]]
+  from = "/api/menu"
+  to = "/api/menu.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/menu/"
+  to = "/api/menu.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
