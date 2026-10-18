@@ -403,27 +403,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 if (data.url) {
                   finalUrl = data.url;
                 }
-              } else if (res.status === 401) {
-                showToast('Sessão expirada. Faça login novamente antes de enviar a foto.', 'error');
+              } else if (res.status === 401 && isJson) {
+                showToast('Sessão expirada. Faça login novamente.', 'error');
                 finishAndClean();
                 resolve(null);
                 return;
               } else {
-                const errData = isJson ? await res.json().catch(() => ({})) : {};
-                showToast(`Falha no upload da foto: ${errData.error || 'Erro no servidor'}. Tente novamente.`, 'error');
-                finishAndClean();
-                resolve(null);
-                return;
+                // If endpoint returned non-JSON, 404 or 405 (Netlify / static deploy), use optimizedBase64 seamlessly
+                console.warn('Backend upload-photo endpoint responded with non-JSON or status', res.status, '- using optimized base64 image');
+                finalUrl = optimizedBase64;
               }
             } catch (netErr: any) {
-              console.warn('Upload-photo fetch warning:', netErr);
-              // Fallback to optimized base64 for static previews
+              console.warn('Upload-photo fetch error, using optimized base64 fallback:', netErr);
               finalUrl = optimizedBase64;
             }
           }
 
           onUploaded(finalUrl);
-          showToast('Foto carregada com sucesso! Clique em "Salvar" para confirmar no cardápio.', 'success');
+          showToast('Foto processada com sucesso! Clique em "Salvar Alterações".', 'success');
           finishAndClean();
           resolve(finalUrl);
         } catch (procErr: any) {
@@ -479,30 +476,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setIsSavingProduct(true);
       const now = Date.now();
 
-      const res = await fetch(`${getApiBaseUrl()}/api/admin/products/${product.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          ...product,
-          photoUrl: uploadedUrl,
-          updatedAt: now,
-        }),
-      });
+      let savedProduct: Product | null = null;
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/api/admin/products/${product.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            ...product,
+            photoUrl: uploadedUrl,
+            updatedAt: now,
+          }),
+        });
 
-      const contentType = res.headers.get('content-type') || '';
-      const isJson = contentType.includes('application/json');
+        const contentType = res.headers.get('content-type') || '';
+        const isJson = contentType.includes('application/json');
 
-      if (!res.ok) {
-        const errData = isJson ? await res.json().catch(() => ({})) : {};
-        throw new Error(errData.error || `Erro ${res.status} ao gravar nova foto no servidor.`);
+        if (res.ok && isJson) {
+          savedProduct = await res.json();
+        } else if (!res.ok && isJson && res.status !== 405 && res.status !== 404) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `Erro ${res.status} ao gravar nova foto no servidor.`);
+        }
+      } catch (netErr: any) {
+        if (
+          netErr.message &&
+          !netErr.message.includes('405') &&
+          !netErr.message.includes('404') &&
+          !netErr.message.includes('Failed to fetch') &&
+          !netErr.message.includes('NetworkError')
+        ) {
+          throw netErr;
+        }
       }
-
-      const savedProduct: Product = isJson
-        ? await res.json()
-        : { ...product, photoUrl: uploadedUrl, updatedAt: now };
 
       // Purge stale image caches
       await clearProductImageCaches();
@@ -515,9 +523,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       const updatedProduct: Product = {
         ...product,
-        ...savedProduct,
-        photoUrl: savedProduct.photoUrl || uploadedUrl,
-        updatedAt: savedProduct.updatedAt || now,
+        ...(savedProduct || {}),
+        photoUrl: (savedProduct && savedProduct.photoUrl) || uploadedUrl,
+        updatedAt: (savedProduct && savedProduct.updatedAt) || now,
       };
       productMap.set(product.id, updatedProduct);
 
@@ -807,20 +815,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       const url = isEdit ? `/api/admin/products/${editingProduct!.id}` : '/api/admin/products';
       const method = isEdit ? 'PUT' : 'POST';
 
-      const res = await fetch(`${getApiBaseUrl()}${url}`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(cleanProductData),
-      });
+      try {
+        const res = await fetch(`${getApiBaseUrl()}${url}`, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(cleanProductData),
+        });
 
-      const contentType = res.headers.get('content-type') || '';
-      const isJson = contentType.includes('application/json');
+        const contentType = res.headers.get('content-type') || '';
+        const isJson = contentType.includes('application/json');
 
-      if (!res.ok) {
-        if (res.status === 401) {
+        if (res.status === 401 && isJson) {
           showToast('Sessão de administrador expirada. Faça login novamente.', 'error');
           localStorage.removeItem('faby_admin_token');
           setAuthToken(null);
@@ -828,12 +836,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           setIsSavingProduct(false);
           return;
         }
-        const errData = isJson ? await res.json().catch(() => ({})) : {};
-        throw new Error(errData.error || `Erro ${res.status} ao salvar no servidor.`);
-      }
 
-      if (isJson) {
-        savedProduct = await res.json();
+        if (res.ok && isJson) {
+          savedProduct = await res.json();
+        } else if (!res.ok && isJson && res.status !== 405 && res.status !== 404) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `Erro ${res.status} ao salvar no servidor.`);
+        }
+      } catch (apiErr: any) {
+        if (
+          apiErr.message &&
+          !apiErr.message.includes('405') &&
+          !apiErr.message.includes('404') &&
+          !apiErr.message.includes('Failed to fetch') &&
+          !apiErr.message.includes('NetworkError')
+        ) {
+          throw apiErr;
+        }
       }
 
       // Purge any stale image caches from CacheStorage

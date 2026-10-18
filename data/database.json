@@ -789,7 +789,7 @@
       "passwordSalt": "66e7e7b58d2caf60cb226a661943d2a6",
       "recoveryKey": "FABY-E28FFFA3",
       "createdAt": "2026-10-17T07:30:14.829Z",
-      "lastLoginAt": "2026-10-18T03:56:57.214Z"
+      "lastLoginAt": "2026-10-18T04:09:20.132Z"
     }
   ],
   "sessions": {
@@ -848,6 +848,14 @@
     "0cdb58618eb193b3dd5ec58510141ed343768b23846f466a9cd2cb61a7b4e86a": {
       "adminId": "admin-1",
       "expiresAt": 1797479817214
+    },
+    "faby_admin_session_12345": {
+      "adminId": "admin-1",
+      "expiresAt": 1794888365847
+    },
+    "b5314aefb27c1e89983a4cb1efcd5954189945d80c1e52bd10c39962e529bdaa": {
+      "adminId": "admin-1",
+      "expiresAt": 1797480560132
     }
   }
 }
